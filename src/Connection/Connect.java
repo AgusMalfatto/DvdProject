@@ -34,6 +34,8 @@ public class Connect {
             System.out.println("SQL is badd!! " + ex.getMessage());
         }
     }
+
+    
      
     
 }
