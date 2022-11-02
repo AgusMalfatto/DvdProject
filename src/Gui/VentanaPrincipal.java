@@ -5,14 +5,21 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.awt.event.ActionEvent;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
+
+import Connection.Connect;
+
 import java.awt.event.MouseAdapter;
 public class VentanaPrincipal extends JFrame implements ActionListener {
+
+	Connect con;
 
 	private int numDelete = -1;
 	private JPanel contentPane;
@@ -59,6 +66,8 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 
 	public VentanaPrincipal() 
 	{		
+		con = new Connect();
+		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 
@@ -71,7 +80,12 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		initButtonsDvd();
 		initCd();
 		initButtonsCd();
-		fillTable();
+		try {
+			fillTable();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		
 		setLocationRelativeTo(null);
 		setResizable(false);
@@ -518,7 +532,12 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 					if(e.getSource() == btnAdd)	{
 						newDvd = new Dvd(row[1].toString(), row[2].toString(), row[3].toString(), row[4].toString(), row[5].toString(), Integer.parseInt(row[6].toString()));
 						dbDvd.setIntoDvd(newDvd);
-						fillTable();
+						try {
+							fillTable();
+						} catch (SQLException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}
 					}
 					
 					else if(e.getSource() == btnModify){
@@ -580,29 +599,46 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 			
 			modelDvd.removeRow(row);
 			CleanTable(modelDvd);
-			fillTable();
+			try {
+				fillTable();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
 		
 	}
 
-	public void fillTable()
+	public void fillTable()throws SQLException
 	{
-		ArrayList<Dvd> dbDvds = dbDvd.getDbDvd();
-		CleanTable(modelDvd);
-		for(Dvd data: dbDvds)
-		{
-			Object[] row = new Object[7];
-			
-			row[0] = data.getId();
-			row[1] = data.getTitle();
-			row[2] = data.getDirector();
-			row[3] = data.getGender();
-			row[4] = data.getTime();
-			row[5] = data.getComment();
-			row[6] = data.getStock();
-			
-			modelDvd.addRow(row);
+		try {
+			con.setConnection();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
+		ResultSet data = con.getDataTable("dvd");
+
+		CleanTable(modelDvd);
+		try{
+			if(data != null){
+				while(data.next()){
+					Object[] row = new Object[7];
+					
+					row[0] = data.getString("Id");
+					row[1] = data.getString("Title");
+					row[2] = data.getString("Director");
+					row[3] = data.getString("Gender");
+					row[4] = data.getString("Time");
+					row[5] = data.getString("Comment");
+					row[6] = data.getString("Stock");
+					
+					modelDvd.addRow(row);
+				}
+			}
+		}catch(SQLException ex){
+			System.out.println("SQL is badd!! " + ex.getMessage());
+		}	
 	}
 	
 	public void CleanTable(DefaultTableModel model)
