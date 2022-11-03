@@ -1,8 +1,12 @@
 package Gui;
 import Productos.*;
+import java.awt.Point;
 import java.awt.BorderLayout;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.AncestorEvent;
+import javax.swing.event.AncestorListener;
+
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.sql.ResultSet;
@@ -12,12 +16,14 @@ import java.awt.event.ActionEvent;
 import java.awt.Color;
 import java.awt.Font;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.JTableHeader;
 import javax.swing.table.TableModel;
+import javax.swing.table.TableRowSorter;
 
 import Connection.Connect;
 
 import java.awt.event.MouseAdapter;
-public class VentanaPrincipal extends JFrame implements ActionListener {
+public class VentanaPrincipal extends JFrame implements ActionListener, AncestorListener {
 
 	Connect con;
 
@@ -67,6 +73,12 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 	public VentanaPrincipal() 
 	{		
 		con = new Connect();
+		try {
+			con.setConnection();
+		} catch (Exception e1) {
+			System.out.println("Could not connect with DB.");
+			e1.printStackTrace();
+		}
 		
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
@@ -80,15 +92,10 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		initButtonsDvd();
 		initCd();
 		initButtonsCd();
-		try {
-			fillTable();
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
 		
 		setLocationRelativeTo(null);
 		setResizable(false);
+		setTitle("EL MARCIANITO");
 	}	
 
 	private void initWindow() 
@@ -215,27 +222,49 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		scrollPaneDvd = new JScrollPane();
 		scrollPaneDvd.setBounds(246, 50, 725, 507);
 		tabDvd.add(scrollPaneDvd);
+		tabDvd.addAncestorListener(new AncestorListener() {
+
+			@Override
+			public void ancestorAdded(AncestorEvent event) {
+				try {
+					fillTable();
+				} catch (SQLException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+			}
+
+			@Override
+			public void ancestorRemoved(AncestorEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent event) {
+				// TODO Auto-generated method stub
+				
+			}			
+		});
 		
 		tableDvd = new JTable();
 		tableDvd.addMouseListener(new MouseAdapter() {
 			@Override
 			public void mouseClicked(MouseEvent e) {
-				if(e.getButton() == MouseEvent.BUTTON3)
+				int row = tableDvd.getSelectedRow();
+				if(row >= 0)
 				{
-					int row = tableDvd.getSelectedRow();
-					if(row >= 0)
-					{
-						txtId.setText(tableDvd.getValueAt(row, 0).toString());
-						txtTitle.setText(tableDvd.getValueAt(row, 1).toString());
-						txtDirector.setText(tableDvd.getValueAt(row, 2).toString());
-						cbGender.setSelectedItem(tableDvd.getValueAt(row, 3).toString());
-						txtTime.setText(tableDvd.getValueAt(row, 4).toString());
-						cbComment.setSelectedItem(tableDvd.getValueAt(row, 5).toString());
-						if(tableDvd.getValueAt(row, 6).toString().equals("1"))
-							cbStock.setSelected(true);
-						else
-							cbStock.setSelected(false);
-					}
+					txtId.setText(tableDvd.getValueAt(row, 0).toString());
+					txtTitle.setText(tableDvd.getValueAt(row, 1).toString());
+					txtDirector.setText(tableDvd.getValueAt(row, 2).toString());
+					cbGender.setSelectedItem(tableDvd.getValueAt(row, 3).toString());
+					txtTime.setText(tableDvd.getValueAt(row, 4).toString());
+					cbComment.setSelectedItem(tableDvd.getValueAt(row, 5).toString());
+					if(tableDvd.getValueAt(row, 6).toString().equals("1"))
+						cbStock.setSelected(true);
+					else
+						cbStock.setSelected(false);
 				}
 			}
 		});
@@ -251,6 +280,9 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		modelDvd.addColumn("Stock");
 		
 		scrollPaneDvd.setViewportView(tableDvd);
+
+		TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<DefaultTableModel>(modelDvd);
+		tableDvd.setRowSorter(sorter);
 	}
 
 	private void initButtonsDvd() 
@@ -300,11 +332,13 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		btnSearchTitle.setFont(new Font("Dialog", Font.BOLD, 15));
 		btnSearchTitle.setBounds(24, 12, 228, 25);
 		plSearch.add(btnSearchTitle);
+		btnSearchTitle.addActionListener(this);
 		
 		btnSearchDirector = new JButton("Search Director");
 		btnSearchDirector.setFont(new Font("Dialog", Font.BOLD, 15));
 		btnSearchDirector.setBounds(24, 53, 228, 25);
 		plSearch.add(btnSearchDirector);
+		btnSearchDirector.addActionListener(this);
 		
 		txtSearchTitle = new JTextField();
 		txtSearchTitle.setColumns(10);
@@ -324,6 +358,27 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		tabCd.setBackground(new Color(153, 193, 241));
 		tabs.addTab("CD", null, tabCd, null);
 		tabCd.setLayout(null);
+		tabCd.addAncestorListener(new AncestorListener() {
+
+			@Override
+			public void ancestorAdded(AncestorEvent event) {
+				fillTableCd();
+				
+			}
+
+			@Override
+			public void ancestorRemoved(AncestorEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+
+			@Override
+			public void ancestorMoved(AncestorEvent event) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+		});
 		
 		plWestCd = new JPanel();
 		plWestCd.setLayout(null);
@@ -470,11 +525,13 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		btnSearchTitleCd.setFont(new Font("Dialog", Font.BOLD, 15));
 		btnSearchTitleCd.setBounds(24, 12, 228, 25);
 		plSearchCd.add(btnSearchTitleCd);
+		btnSearchTitleCd.addActionListener(this);
 		
 		btnSearchArtistCd = new JButton("Search Artist");
 		btnSearchArtistCd.setFont(new Font("Dialog", Font.BOLD, 15));
 		btnSearchArtistCd.setBounds(24, 53, 228, 25);
 		plSearchCd.add(btnSearchArtistCd);
+		btnSearchArtistCd.addActionListener(this);
 		
 		txtSearchTitleCd = new JTextField();
 		txtSearchTitleCd.setColumns(10);
@@ -497,6 +554,26 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		
 		modelCd = new DefaultTableModel();
 		tableCd = new JTable(modelCd);
+		tableCd.addMouseListener(new MouseAdapter() {
+			@Override
+			public void mouseClicked(MouseEvent e) {
+				int row = tableCd.getSelectedRow();
+				if(row >= 0)
+				{
+					txtIdCd.setText(tableCd.getValueAt(row, 0).toString());
+					txtTitleCd.setText(tableCd.getValueAt(row, 1).toString());
+					txtArtistCd.setText(tableCd.getValueAt(row, 2).toString());
+					txtSongsCd.setText(tableCd.getValueAt(row, 3).toString());
+					cbGenderCd.setSelectedItem(tableCd.getValueAt(row, 4).toString());
+					cbCommentCd.setSelectedItem(tableCd.getValueAt(row, 5).toString());
+					if(tableCd.getValueAt(row, 6).toString().equals("1"))
+						cbStockCd.setSelected(true);
+					else
+						cbStockCd.setSelected(false);
+				}
+			}
+		});
+		
 		modelCd.addColumn("Id");
 		modelCd.addColumn("Title");
 		modelCd.addColumn("Artist");
@@ -505,35 +582,29 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		modelCd.addColumn("Comment");
 		modelCd.addColumn("Stock");
 		scrollPaneCd.setViewportView(tableCd);
+		TableRowSorter<DefaultTableModel> sorter = new TableRowSorter<DefaultTableModel>(modelCd);
+		tableCd.setRowSorter(sorter);
 	}
 
 	
+	
+
 	@Override
 	public void actionPerformed(ActionEvent e) 
 	{
 		switch(tabs.getSelectedIndex())
 		{
 			case 0:
-				Object []row = new Object[7];
-				row[0] = txtId.getText();
-				row[1] = txtTitle.getText();
-				row[2] = txtDirector.getText();
-				row[3] = (String) cbGender.getSelectedItem();
-				row[4] = txtTime.getText();
-				row[5] = (String) cbComment.getSelectedItem();
-				row[6] = 0;
 				
-				if(cbStock.isSelected())
-					row[6] = 1;
+				Dvd dvd = getDvd();				
 				
-				
-				
-				if(!row[1].equals("") && !row[2].equals("") && !row[4].equals("")){							
+				if(!dvd.getTitle().equals("") && !dvd.getDirector().equals("") && !dvd.getTime().equals("")){		
+								
 					if(e.getSource() == btnAdd)	{
-						newDvd = new Dvd(row[1].toString(), row[2].toString(), row[3].toString(), row[4].toString(), row[5].toString(), Integer.parseInt(row[6].toString()));
-						dbDvd.setIntoDvd(newDvd);
+						dbDvd.setIntoDvd(dvd);
 						try {
 							fillTable();
+							
 						} catch (SQLException e1) {
 							// TODO Auto-generated catch block
 							e1.printStackTrace();
@@ -541,72 +612,181 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 					}
 					
 					else if(e.getSource() == btnModify){
-						int selectedRow = tableDvd.getSelectedRow();
-						modify(selectedRow, row);
+						int id = Integer.parseInt(txtId.getText());								
+						modifyDvd(dvd, id);
 					}
 					
-					else if(e.getSource() == btnDelete){			 
-						int selectedRow = tableDvd.getSelectedRow();
-						int index = -1;
-						index = dbDvd.indexOfDvd(newDvd);
-						dbDvd.deleteFilm(index);
-						modelDvd.removeRow(selectedRow);
-						setVoidDvd();					
+					else if(e.getSource() == btnDelete){	
+						int id = Integer.parseInt(txtId.getText());		
+						dbDvd.deleteFilm("dvd", id);
+						setVoidDvd();
+						try {
+							fillTable();
+						} catch (SQLException e1) {
+							// TODO Auto-generated catch block
+							e1.printStackTrace();
+						}					
 					}
 				}
 				
 				
 				
-				if(e.getSource() == btnReset)
-				{
+				if(e.getSource() == btnReset) {
 					setVoidDvd();
+				}
+
+				else if(e.getSource() == btnSearchTitle) {
+					String searchTitle = txtSearchTitle.getText();
+					if(!searchTitle.equals("")) {
+						searchTitleDvd("dvd", searchTitle);
+					}
+				}
+
+				else if(e.getSource() == btnSearchDirector) {
+					String searchDirector = txtSearchDirector.getText();
+					if(!searchDirector.equals("")) {
+						searchDirectorDvd("dvd", searchDirector);
+					}
 				}
 				break;
 			case 1:
 				Cd newCd = getCd();
 				if(!newCd.getTitle().equals("") && !newCd.getArtist().equals("") && !newCd.getSongs().equals(""))
 				{
+					
 				    if(e.getSource() == btnAddCd)
 				    {
 				        addCd(newCd);
 				    }
 				    else if(e.getSource() == btnModifyCd)
 				    {
-				       // modifyCd();
+						int idCd = Integer.parseInt(txtIdCd.getText());
+				       try {
+						modifyCd(newCd, idCd);
+						fillTableCd();
+					} catch (SQLException e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
 				    }
 				    else if(e.getSource() == btnDeleteCd)
 				    {
-				        //deleteCd(idDisc);
+						int idCd = Integer.parseInt(txtIdCd.getText());
+				        dbDvd.deleteFilm("cd", idCd);
+						voidCd();
+						fillTableCd();	
 				    }
-				    else if(e.getSource() == btnResetCd) {
-				    	voidCd();
-				    }
+				}
+				if(e.getSource() == btnResetCd) {
+					voidCd();
+				}
+				else if(e.getSource() == btnSearchTitleCd) {
+					String searchTitle = txtSearchTitleCd.getText();
+					searchTitleCd("cd", searchTitle);
+				}
+				else if(e.getSource() == btnSearchArtistCd) {
+					String searchArtist = txtSearchArtistCd.getText();
+					searchArtistCd("cd", searchArtist);
 				}
 		}
 				
 	}
 	
-	public void modify(int row, Object[] dvd){
-		
-		Dvd dvdAux = dbDvd.getDVD(Integer.parseInt(dvd[0].toString())); 
+	protected void orderByCd(String column) {
+		ResultSet resul = con.getDataTableOrderBy("cd", column);
+		CleanTable(modelCd);
+		fillTableCd(resul);
+	}
+	
+	private void searchArtistCd(String table, String searchArtist) {
+		ResultSet result = con.searchCreator(table, "Artist", searchArtist);
+		CleanTable(modelCd);
+		fillTableCd(result);
+	}
+
+	private void searchTitleCd(String table, String searchTitle) {
+		ResultSet resul = con.searchTitle(table, searchTitle);
+		CleanTable(modelCd);
+		fillTableCd(resul);
+	}
+
+	private void fillTableCd(ResultSet result) {
+		try{
+			while(result.next()){
+				Object[] row = new Object[7];
+				
+				row[0] = result.getString("Id");
+				row[1] = result.getString("Title");
+				row[2] = result.getString("Artist");
+				row[3] = result.getString("Gender");
+				row[4] = result.getString("Songs");
+				row[5] = result.getString("Comment");
+				row[6] = result.getString("Stock");
+				
+				modelCd.addRow(row);
+			}		
+		}catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void searchDirectorDvd(String string, String searchDirector) {
+		ResultSet result = con.searchCreator(string, "Director", searchDirector);
+		CleanTable(modelDvd);
+		fillTable(result);
+	}
+
+	private void fillTable(ResultSet result) {
+		try{
+			while(result.next()){
+				Object[] row = new Object[7];
+				
+				row[0] = result.getString("Id");
+				row[1] = result.getString("Title");
+				row[2] = result.getString("Director");
+				row[3] = result.getString("Gender");
+				row[4] = result.getString("Time");
+				row[5] = result.getString("Comment");
+				row[6] = result.getString("Stock");
+				
+				modelDvd.addRow(row);
+			}		
+		}catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private void searchTitleDvd(String table, String searchTitle) {
+		ResultSet result = con.searchTitle(table, searchTitle);
+		CleanTable(modelDvd);
+		fillTable(result);		
+	}
+
+	public void modifyDvd(Dvd dvdAux, int id){
 		if(dvdAux != null) {
-			dvdAux.setTitle(dvd[1].toString());
-			dvdAux.setDirector(dvd[2].toString());
-			dvdAux.setGender(dvd[3].toString());
-			dvdAux.setTime(dvd[4].toString());
-			dvdAux.setComment(dvd[5].toString());
-			dvdAux.setStock(Integer.parseInt(dvd[6].toString()));
-			
-			modelDvd.removeRow(row);
-			CleanTable(modelDvd);
 			try {
+				con.modifyDBDvd(dvdAux.getTitle(), dvdAux.getDirector(), dvdAux.getGender(), dvdAux.getTime(), dvdAux.getComment(), dvdAux.getStock(), id);
+				CleanTable(modelDvd);
 				fillTable();
+				JOptionPane.showMessageDialog(null, "Data changed successfully.");
 			} catch (SQLException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}
 		
+	}
+
+	private void modifyCd(Cd cd, int idCd) throws SQLException {
+		if(cd != null) {
+			//public void modifyDBDvd(String title, String creator, String genre, String count, String comment, int stock, int id)
+			con.modifyDBCd(cd.getTitle(), cd.getArtist(), cd.getGender(), cd.getSongs(), cd.getComment(), cd.getStock(), idCd);
+			CleanTable(modelCd);
+			fillTableCd();
+			JOptionPane.showMessageDialog(null, "Data changed successfully.");
+		}
 	}
 
 	public void fillTable()throws SQLException
@@ -664,6 +844,14 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		cbGender.setSelectedIndex(0);
 		cbComment.setSelectedIndex(0);
 		cbStock.setSelected(false);
+		txtSearchTitle.setText("");
+		txtSearchDirector.setText("");
+		try {
+			fillTable();
+		} catch (SQLException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public Cd getCd()
@@ -683,9 +871,26 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		return newCd;
 	}
 
+	private Dvd getDvd() {
+		String title = txtTitle.getText();
+		String director = txtDirector.getText();
+		String gender = (String) cbGender.getSelectedItem();
+		String time = txtTime.getText();
+		String comment = (String) cbComment.getSelectedItem();
+		int stock = 0;
+		
+		if(this.cbStock.isSelected())
+			stock = 1;
+		
+		Dvd dvd = new Dvd(title, director, gender, time, comment, stock);
+
+		return dvd;
+	}
+
 	public void addCd(Cd newCd) {
 	    dbDvd.insertIntoCd(newCd);
 	    fillTableCd();
+
 	    voidCd();
 	}
 	
@@ -697,24 +902,58 @@ public class VentanaPrincipal extends JFrame implements ActionListener {
 		cbGenderCd.setSelectedIndex(0);
 		cbCommentCd.setSelectedIndex(0);
 		cbStockCd.setSelected(false);
+		txtSearchTitleCd.setText("");
+		txtSearchArtistCd.setText("");
+
+		fillTableCd();
 		
 	}
 
 	public void fillTableCd()
 	{
-		ArrayList<Cd> dbCd = dbDvd.getDbCd();
-		CleanTable(modelDvd);
-		for(Cd data: dbCd)
-		{
-			Object[] row = new Object[6];
-			row[0] = data.getTitle();
-			row[1] = data.getArtist();
-			row[2] = data.getGender();
-			row[3] = data.getSongs();
-			row[4] = data.getComment();
-			row[5] = data.getStock();
-			
-			modelCd.addRow(row);
+		ResultSet data = con.getDataTable("cd");
+		
+		CleanTable(modelCd);
+
+		if(data != null){
+			try {
+				while(data.next()){
+					Object[] row = new Object[7];
+					row[0] = data.getString("Id");
+					row[1] = data.getString("Title");
+					row[2] = data.getString("Artist");
+					row[3] = data.getString("Songs");
+					row[4] = data.getString("Gender");
+					row[5] = data.getString("Comment");
+					row[6] = data.getString("Stock");
+					
+					modelCd.addRow(row);
+					}
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
 		}
+			
+		
+		
+	}
+
+	@Override
+	public void ancestorAdded(AncestorEvent event) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void ancestorRemoved(AncestorEvent event) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void ancestorMoved(AncestorEvent event) {
+		// TODO Auto-generated method stub
+		
 	}
 }
